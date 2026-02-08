@@ -1,0 +1,49 @@
+services:
+  plane-frontend:
+    image: makeplane/plane-frontend:latest
+    container_name: plane-frontend
+    restart: unless-stopped
+    depends_on:
+      - plane-backend
+    env_file:
+      - .env
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+
+      - "traefik.http.routers.plane.rule=Host(`${PLANE_HOST}`)"
+      - "traefik.http.routers.plane.entrypoints=websecure"
+      - "traefik.http.routers.plane.tls.certresolver=le-cloudflare"
+      - "traefik.http.routers.plane.middlewares=internal@docker"
+
+      - "traefik.http.services.plane.loadbalancer.server.port=3000"
+
+  plane-backend:
+    image: makeplane/plane-backend:latest
+    container_name: plane-backend
+    restart: unless-stopped
+    depends_on:
+      - plane-redis
+    env_file:
+      - .env
+    networks:
+      - internal-network
+      - postgres-network
+
+  plane-redis:
+    image: redis:7
+    container_name: plane-redis
+    restart: unless-stopped
+    networks:
+      - internal-network
+
+
+networks:
+  traefik-network:
+    external: true
+  postgres-network:
+    external: true
+  internal-network:
+    driver: bridge
