@@ -43,6 +43,13 @@ services:
   web:
     image: artifacts.plane.so/makeplane/plane-frontend:${APP_RELEASE:-v1.2.1}
     container_name: plane-web
+    deploy:
+      replicas: ${WEB_REPLICAS:-1}
+      restart_policy:
+        condition: any
+    depends_on:
+      - api
+      - worker
     env_file: .env
     networks:
       - internal-network
@@ -57,17 +64,18 @@ services:
       - traefik.http.routers.plane-web.service=plane-web
 
       - traefik.http.services.plane-web.loadbalancer.server.port=3000
+
+  space:
+    image: artifacts.plane.so/makeplane/plane-space:${APP_RELEASE:-v1.2.1}
+    container_name: plane-space
     deploy:
-      replicas: ${WEB_REPLICAS:-1}
+      replicas: ${SPACE_REPLICAS:-1}
       restart_policy:
         condition: any
     depends_on:
       - api
       - worker
-
-  space:
-    image: artifacts.plane.so/makeplane/plane-space:${APP_RELEASE:-v1.2.1}
-    container_name: plane-space
+      - web
     env_file: .env
     networks:
       - internal-network
@@ -82,18 +90,17 @@ services:
       - traefik.http.routers.plane-space.service=plane-space
 
       - traefik.http.services.plane-space.loadbalancer.server.port=3000
-    deploy:
-      replicas: ${SPACE_REPLICAS:-1}
-      restart_policy:
-        condition: any
-    depends_on:
-      - api
-      - worker
-      - web
 
   admin:
     image: artifacts.plane.so/makeplane/plane-admin:${APP_RELEASE:-v1.2.1}
     container_name: plane-admin
+    deploy:
+      replicas: ${ADMIN_REPLICAS:-1}
+      restart_policy:
+        condition: any
+    depends_on:
+      - api
+      - web
     env_file: .env
     networks:
       - internal-network
@@ -108,17 +115,17 @@ services:
       - traefik.http.routers.plane-admin.service=plane-admin
 
       - traefik.http.services.plane-admin.loadbalancer.server.port=3000
+
+  live:
+    image: artifacts.plane.so/makeplane/plane-live:${APP_RELEASE:-v1.2.1}
+    container_name: plane-live
     deploy:
-      replicas: ${ADMIN_REPLICAS:-1}
+      replicas: ${LIVE_REPLICAS:-1}
       restart_policy:
         condition: any
     depends_on:
       - api
       - web
-
-  live:
-    image: artifacts.plane.so/makeplane/plane-live:${APP_RELEASE:-v1.2.1}
-    container_name: plane-live
     env_file: .env
     environment:
       <<: [*live-env, *redis-env]
@@ -135,13 +142,6 @@ services:
       - traefik.http.routers.plane-live.service=plane-live
 
       - traefik.http.services.plane-live.loadbalancer.server.port=3000
-    deploy:
-      replicas: ${LIVE_REPLICAS:-1}
-      restart_policy:
-        condition: any
-    depends_on:
-      - api
-      - web
 
   api:
     image: artifacts.plane.so/makeplane/plane-backend:${APP_RELEASE:-v1.2.1}
@@ -151,11 +151,14 @@ services:
       replicas: ${API_REPLICAS:-1}
       restart_policy:
         condition: any
-    volumes:
-      - logs_api:/code/plane/logs
+    depends_on:
+      - redis
+      - mq
     env_file: .env
     environment:
       <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - logs_api:/code/plane/logs
     networks:
       - internal-network
       - traefik-network
@@ -170,9 +173,6 @@ services:
       - traefik.http.routers.plane-api.service=plane-api
 
       - traefik.http.services.plane-api.loadbalancer.server.port=8000
-    depends_on:
-      - redis
-      - mq
 
   worker:
     image: artifacts.plane.so/makeplane/plane-backend:${APP_RELEASE:-v1.2.1}
@@ -182,18 +182,18 @@ services:
       replicas: ${WORKER_REPLICAS:-1}
       restart_policy:
         condition: any
-    volumes:
-      - logs_worker:/code/plane/logs
-    env_file: .env
-    environment:
-      <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
-    networks:
-      - internal-network
-      - postgres-network
     depends_on:
       - api
       - redis
       - mq
+    env_file: .env
+    environment:
+      <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - logs_worker:/code/plane/logs
+    networks:
+      - internal-network
+      - postgres-network
 
   beat-worker:
     image: artifacts.plane.so/makeplane/plane-backend:${APP_RELEASE:-v1.2.1}
@@ -203,18 +203,18 @@ services:
       replicas: ${BEAT_WORKER_REPLICAS:-1}
       restart_policy:
         condition: any
-    volumes:
-      - logs_beat-worker:/code/plane/logs
-    env_file: .env
-    environment:
-      <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
-    networks:
-      - internal-network
-      - postgres-network
     depends_on:
       - api
       - redis
       - mq
+    env_file: .env
+    environment:
+      <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - logs_beat-worker:/code/plane/logs
+    networks:
+      - internal-network
+      - postgres-network
 
   migrator:
     image: artifacts.plane.so/makeplane/plane-backend:${APP_RELEASE:-v1.2.1}
@@ -224,35 +224,33 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-    volumes:
-      - logs_migrator:/code/plane/logs
+    depends_on:
+      - redis
     env_file: .env
     environment:
       <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - logs_migrator:/code/plane/logs
     networks:
       - internal-network
       - postgres-network
-    depends_on:
-      - redis
 
   redis:
     image: valkey/valkey:7.2.11-alpine
     container_name: plane-redis
-    networks:
-      - internal-network
-    env_file: .env
     deploy:
       replicas: 1
       restart_policy:
         condition: any
+    env_file: .env
     volumes:
       - redisdata:/data
+    networks:
+      - internal-network
 
   mq:
     image: rabbitmq:3.13.6-management-alpine
     container_name: plane-mq
-    networks:
-      - internal-network
     deploy:
       replicas: 1
       restart_policy:
@@ -262,6 +260,8 @@ services:
       <<: *mq-env
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - internal-network
 
 # Comment this if you using any external s3 compatible storage
 #  minio:
