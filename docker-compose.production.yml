@@ -142,6 +142,12 @@ services:
     env_file: .env
     environment:
       <<: [*live-env, *redis-env]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f node > /dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - internal-network
       - traefik-network
@@ -208,6 +214,12 @@ services:
     env_file: .env
     environment:
       <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A plane inspect ping --destination celery@$$HOSTNAME -t 5 2>/dev/null | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     volumes:
       - logs_worker:/code/plane/logs
     networks:
@@ -229,6 +241,12 @@ services:
     env_file: .env
     environment:
       <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'celery' > /dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     volumes:
       - logs_beat-worker:/code/plane/logs
     networks:
