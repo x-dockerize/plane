@@ -51,6 +51,12 @@ services:
       - api
       - worker
     env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - internal-network
       - traefik-network
@@ -77,6 +83,12 @@ services:
       - worker
       - web
     env_file: .env
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/spaces"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - internal-network
       - traefik-network
@@ -160,6 +172,12 @@ services:
       <<: [*app-env, *redis-env, *minio-env, *aws-s3-env]
     volumes:
       - logs_api:/code/plane/logs
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f gunicorn > /dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - internal-network
       - traefik-network
@@ -246,6 +264,12 @@ services:
     env_file: .env
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - internal-network
 
@@ -261,6 +285,12 @@ services:
       <<: *mq-env
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - internal-network
 
