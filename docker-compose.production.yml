@@ -112,6 +112,7 @@ services:
       - traefik.http.routers.plane-admin.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`) && PathPrefix(`/god-mode`)
       - traefik.http.routers.plane-admin.entrypoints=websecure
       - traefik.http.routers.plane-admin.tls.certresolver=le-cloudflare
+      - traefik.http.routers.plane-admin.middlewares=trusted@file
       - traefik.http.routers.plane-admin.service=plane-admin
 
       - traefik.http.services.plane-admin.loadbalancer.server.port=3000
