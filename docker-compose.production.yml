@@ -65,8 +65,8 @@ services:
       - traefik.docker.network=traefik-network
 
       - traefik.http.routers.plane-web.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`)
-      - traefik.http.routers.plane-web.entrypoints=websecure
-      - traefik.http.routers.plane-web.tls.certresolver=le-cloudflare
+      - traefik.http.routers.plane-web.entrypoints=https
+      - traefik.http.routers.plane-web.tls.certresolver=cloudflare
       - traefik.http.routers.plane-web.service=plane-web
 
       - traefik.http.services.plane-web.loadbalancer.server.port=3000
@@ -97,8 +97,8 @@ services:
       - traefik.docker.network=traefik-network
 
       - traefik.http.routers.plane-space.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`) && PathPrefix(`/spaces`)
-      - traefik.http.routers.plane-space.entrypoints=websecure
-      - traefik.http.routers.plane-space.tls.certresolver=le-cloudflare
+      - traefik.http.routers.plane-space.entrypoints=https
+      - traefik.http.routers.plane-space.tls.certresolver=cloudflare
       - traefik.http.routers.plane-space.service=plane-space
 
       - traefik.http.services.plane-space.loadbalancer.server.port=3000
@@ -122,8 +122,8 @@ services:
       - traefik.docker.network=traefik-network
 
       - traefik.http.routers.plane-admin.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`) && PathPrefix(`/god-mode`)
-      - traefik.http.routers.plane-admin.entrypoints=websecure
-      - traefik.http.routers.plane-admin.tls.certresolver=le-cloudflare
+      - traefik.http.routers.plane-admin.entrypoints=https
+      - traefik.http.routers.plane-admin.tls.certresolver=cloudflare
       - traefik.http.routers.plane-admin.middlewares=trusted@file
       - traefik.http.routers.plane-admin.service=plane-admin
 
@@ -156,8 +156,8 @@ services:
       - traefik.docker.network=traefik-network
 
       - traefik.http.routers.plane-live.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`) && PathPrefix(`/live`)
-      - traefik.http.routers.plane-live.entrypoints=websecure
-      - traefik.http.routers.plane-live.tls.certresolver=le-cloudflare
+      - traefik.http.routers.plane-live.entrypoints=https
+      - traefik.http.routers.plane-live.tls.certresolver=cloudflare
       - traefik.http.routers.plane-live.service=plane-live
 
       - traefik.http.services.plane-live.loadbalancer.server.port=3000
@@ -193,8 +193,8 @@ services:
       - traefik.docker.network=traefik-network
 
       - traefik.http.routers.plane-api.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`) && (PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/m/auth`))
-      - traefik.http.routers.plane-api.entrypoints=websecure
-      - traefik.http.routers.plane-api.tls.certresolver=le-cloudflare
+      - traefik.http.routers.plane-api.entrypoints=https
+      - traefik.http.routers.plane-api.tls.certresolver=cloudflare
       - traefik.http.routers.plane-api.service=plane-api
 
       - traefik.http.services.plane-api.loadbalancer.server.port=8000
@@ -325,8 +325,8 @@ services:
 #      - traefik.docker.network=traefik-network
 #
 #      - traefik.http.routers.plane-minio.rule=Host(`${PLANE_SERVER_HOSTNAME:?required}`) && PathPrefix(`/uploads`)
-#      - traefik.http.routers.plane-minio.entrypoints=websecure
-#      - traefik.http.routers.plane-minio.tls.certresolver=le-cloudflare
+#      - traefik.http.routers.plane-minio.entrypoints=https
+#      - traefik.http.routers.plane-minio.tls.certresolver=cloudflare
 #      - traefik.http.routers.plane-minio.service=plane-minio
 #
 #      - traefik.http.services.plane-minio.loadbalancer.server.port=9000
